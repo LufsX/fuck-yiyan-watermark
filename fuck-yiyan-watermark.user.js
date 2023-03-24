@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         去你大爷的文心一言水印
 // @namespace    eb-watermark
-// @version      1
+// @version      -1
 // @description  FUCK WATERMARK
-// @author       ChatGPT, LufsX
+// @author       LufsX, GPT3.5-turbo
 // @match        https://yiyan.baidu.com/*
 // @license      MIT
 // @grant        none
@@ -12,26 +12,43 @@
 (function () {
   "use strict";
 
-  function cleanWatermark() {
-    // 查询元素
-    var watermark = document.getElementById("eb-watermark");
+  var markID;
+  var findDone = false;
 
-    // 如果不存在，等待 0.5s 再重试
-    if (!watermark) {
-      setTimeout(cleanWatermark, 500);
+  function findWatermark() {
+    const reg = /[0-9a-z]{8}-([0-9a-z]{4}-){3}[0-9a-z]{12}/;
+    const divs = document.querySelectorAll("div");
+    divs.forEach((div) => {
+      if (reg.test(div.id)) {
+        markID = div.id;
+        console.log("find");
+        console.log(div.id);
+        findDone = true;
+      }
+    });
+    console.log("no found");
+    if (!findDone) {
+      setTimeout(findWatermark, 500);
       return;
     }
+  }
 
-    // 如果存在，清空 style ，并隐藏它
+  function cleanWatermark() {
+    console.log("clean" + markID);
+    var watermark = document.getElementById(markID);
+
     watermark.style = null;
     watermark.style.display = "none";
   }
 
-  // 使用 MutationObserver 监听 body，当子元素发生变化时执行清空函数
   var observer = new MutationObserver(function (mutationsList) {
     for (var mutation of mutationsList) {
-      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+      if (!findDone) {
+        findWatermark();
+      }
+      if (mutation.type === "childList" && mutation.addedNodes.length > 0 && findDone) {
         cleanWatermark();
+        console.log("tir");
       }
     }
   });
